@@ -735,7 +735,7 @@ function searchPerf(){
   const pseudo=document.getElementById('search-pseudo').value.trim();
   const out=document.getElementById('search-results');
   if(!pseudo){out.innerHTML='<span class="err">Saisis un pseudo.</span>';return;}
-  const APPS_URL='URL_APPS_SCRIPT_ICI';
+  const APPS_URL='https://script.google.com/macros/s/AKfycbxLCHDPkaRRB4sBKZYQa3MzHpTzNbD6ZEzPvfdjrqpe_TcAhL0bSszYJBQ8JJxFpVbiOQ/exec';
   if(APPS_URL==='URL_APPS_SCRIPT_ICI'){out.innerHTML='<span class="err">URL Apps Script non configurée.</span>';return;}
   out.innerHTML='<em>Recherche en cours…</em>';
   // JSONP pour contourner CORS avec Google Apps Script
