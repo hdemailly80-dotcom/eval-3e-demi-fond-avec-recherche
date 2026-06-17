@@ -715,7 +715,7 @@ function downloadCSV(){
 
 function saveData(){
   const row=buildRow();
-  const APPS_URL='https://script.google.com/macros/s/AKfycbxLCHDPkaRRB4sBKZYQa3MzHpTzNbD6ZEzPvfdjrqpe_TcAhL0bSszYJBQ8JJxFpVbiOQ/exec';
+  const APPS_URL='https://script.google.com/macros/s/AKfycbxklT6BfH3uSoHkSVymj8_jLV3Z5dwkj0VurxqTs5ZIZi9kGCVQ-2vQ5M46VRWJ9UbJUA/exec';
   if(APPS_URL==='URL_APPS_SCRIPT_ICI'){alert('URL Apps Script non configurée. Export CSV disponible.');downloadCSV();return;}
   // Envoi ligne coureur
   const params=new URLSearchParams();
@@ -735,7 +735,7 @@ function searchPerf(){
   const pseudo=document.getElementById('search-pseudo').value.trim();
   const out=document.getElementById('search-results');
   if(!pseudo){out.innerHTML='<span class="err">Saisis un pseudo.</span>';return;}
-  const APPS_URL='https://script.google.com/macros/s/AKfycbxLCHDPkaRRB4sBKZYQa3MzHpTzNbD6ZEzPvfdjrqpe_TcAhL0bSszYJBQ8JJxFpVbiOQ/exec';
+  const APPS_URL='https://script.google.com/macros/s/AKfycbxklT6BfH3uSoHkSVymj8_jLV3Z5dwkj0VurxqTs5ZIZi9kGCVQ-2vQ5M46VRWJ9UbJUA/exec';
   if(APPS_URL==='URL_APPS_SCRIPT_ICI'){out.innerHTML='<span class="err">URL Apps Script non configurée.</span>';return;}
   out.innerHTML='<em>Recherche en cours…</em>';
   // JSONP pour contourner CORS avec Google Apps Script
