@@ -715,7 +715,7 @@ function downloadCSV(){
 
 function saveData(){
   const row=buildRow();
-  const APPS_URL='https://script.google.com/macros/s/AKfycbxklT6BfH3uSoHkSVymj8_jLV3Z5dwkj0VurxqTs5ZIZi9kGCVQ-2vQ5M46VRWJ9UbJUA/exec';
+  const APPS_URL='https://script.google.com/macros/s/AKfycbyZvHql1zfczoccbBWAIdajj5boYrBG1igWKiJynv7ESBt9mVXeRhk9EqorHjLMoh7aew/exec';
   if(APPS_URL==='URL_APPS_SCRIPT_ICI'){alert('URL Apps Script non configurée. Export CSV disponible.');downloadCSV();return;}
   // Envoi ligne coureur
   const params=new URLSearchParams();
@@ -735,33 +735,45 @@ function searchPerf(){
   const pseudo=document.getElementById('search-pseudo').value.trim();
   const out=document.getElementById('search-results');
   if(!pseudo){out.innerHTML='<span class="err">Saisis un pseudo.</span>';return;}
-  const APPS_URL='https://script.google.com/macros/s/AKfycbxklT6BfH3uSoHkSVymj8_jLV3Z5dwkj0VurxqTs5ZIZi9kGCVQ-2vQ5M46VRWJ9UbJUA/exec';
+  const APPS_URL='https://script.google.com/macros/s/AKfycbyZvHql1zfczoccbBWAIdajj5boYrBG1igWKiJynv7ESBt9mVXeRhk9EqorHjLMoh7aew/exec';
   if(APPS_URL==='URL_APPS_SCRIPT_ICI'){out.innerHTML='<span class="err">URL Apps Script non configurée.</span>';return;}
   out.innerHTML='<em>Recherche en cours…</em>';
-  // JSONP pour contourner CORS avec Google Apps Script
-  const cbName='_dfCallback_'+Date.now();
-  window[cbName]=function(rows){
-    delete window[cbName];
-    document.getElementById('jsonp-script')&&document.getElementById('jsonp-script').remove();
-    if(!rows||rows.length===0){out.innerHTML='<span class="err">Aucune donnée trouvée pour ce pseudo.</span>';return;}
-    let html=`<div style="overflow-x:auto"><table>
-      <tr><th>Classe</th><th>Pseudo</th><th>VMA</th><th>Nb courses</th><th>Dist. réelle</th><th>% réel VMA</th><th>Note course</th><th>Note écha</th><th>Note récup</th><th>Note totale</th><th>Note obs</th><th>Note finale</th></tr>`;
-    rows.forEach(r=>{
-      html+=`<tr>
-        <td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td>
-        <td>${r[7]}</td><td>${r[8]}</td><td>${r[12]}</td><td>${r[13]}</td>
-        <td>${r[14]}</td><td>${r[15]}</td><td>${r[17]}</td>
-        <td><strong style="color:#2563eb">${r[18]||'—'}</strong></td>
-      </tr>`;
-    });
-    html+=`</table></div>`;
-    out.innerHTML=html;
+  // Nettoyer ancienne iframe
+  const old=document.getElementById('search-iframe');
+  if(old)old.remove();
+  // Écouter la réponse via postMessage
+  const handler=function(e){
+    try{
+      const rows=Array.isArray(e.data)?e.data:JSON.parse(e.data);
+      window.removeEventListener('message',handler);
+      document.getElementById('search-iframe')&&document.getElementById('search-iframe').remove();
+      if(!rows||rows.length===0){out.innerHTML='<span class="err">Aucune donnée trouvée pour ce pseudo.</span>';return;}
+      let html=`<div style="overflow-x:auto"><table>
+        <tr><th>Classe</th><th>Pseudo</th><th>VMA</th><th>Nb courses</th><th>Dist. réelle</th><th>% réel VMA</th><th>Note course</th><th>Note écha</th><th>Note récup</th><th>Note totale</th><th>Note obs</th><th>Note finale</th></tr>`;
+      rows.forEach(r=>{
+        html+=`<tr>
+          <td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td>
+          <td>${r[7]}</td><td>${r[8]}</td><td>${r[12]}</td><td>${r[13]}</td>
+          <td>${r[14]}</td><td>${r[15]}</td><td>${r[17]}</td>
+          <td><strong style="color:#2563eb">${r[18]||'—'}</strong></td>
+        </tr>`;
+      });
+      html+=`</table></div>`;
+      out.innerHTML=html;
+    }catch(err){}
   };
-  const s=document.createElement('script');
-  s.id='jsonp-script';
-  s.src=APPS_URL+'?action=search&pseudo='+encodeURIComponent(pseudo)+'&callback='+cbName;
-  s.onerror=()=>{out.innerHTML='<span class="err">Erreur de connexion au Sheets.</span>';delete window[cbName];};
-  document.body.appendChild(s);
+  window.addEventListener('message',handler);
+  // Timeout si pas de réponse
+  setTimeout(()=>{
+    window.removeEventListener('message',handler);
+    if(out.innerHTML.includes('cours'))out.innerHTML='<span class="err">Erreur de connexion au Sheets.</span>';
+  },8000);
+  // Créer iframe invisible
+  const iframe=document.createElement('iframe');
+  iframe.id='search-iframe';
+  iframe.style='display:none';
+  iframe.src=APPS_URL+'?action=search&pseudo='+encodeURIComponent(pseudo);
+  document.body.appendChild(iframe);
 }
 
 // ===================== LOCAL STORAGE =====================
