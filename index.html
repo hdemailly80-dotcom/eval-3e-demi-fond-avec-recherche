@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Évaluation Demi-Fond EPS</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Barlow Condensed',sans-serif;background:#fff;color:#222;font-size:16px;overflow-x:hidden}
+#portrait-msg{display:none;position:fixed;inset:0;background:#fff;z-index:9999;justify-content:center;align-items:center;flex-direction:column;font-size:1.5rem;text-align:center;padding:2rem}
+@media(orientation:portrait){#portrait-msg{display:flex}#app{display:none}}
+@media(orientation:landscape){#portrait-msg{display:none}#app{display:block}}
+.page{display:none;padding:10px 16px;min-height:100vh}
+.page.active{display:block}
+h1{font-size:1.6rem;font-weight:900;margin-bottom:8px;color:#1a1a1a}
+h2{font-size:1.3rem;font-weight:700;margin-bottom:6px}
+.banner{background:#1a1a2e;color:#fff;padding:8px 14px;border-radius:8px;margin-bottom:10px;font-size:0.95rem;text-align:center}
+.banner span{margin:0 12px}
+label{font-weight:600;font-size:0.95rem;display:block;margin-bottom:2px}
+input,select{width:100%;padding:7px 10px;border:2px solid #ccc;border-radius:6px;font-family:'Barlow Condensed',sans-serif;font-size:1rem;background:#fff;margin-bottom:8px}
+input:focus,select:focus{outline:none;border-color:#2563eb}
+.row{display:flex;gap:10px;align-items:flex-end}
+.row>div{flex:1}
+.course-block{background:#f0f4ff;border:2px solid #2563eb;border-radius:8px;padding:10px;margin-bottom:8px}
+.course-block h3{font-size:1.1rem;font-weight:700;color:#2563eb;margin-bottom:6px}
+.dist-preview{font-size:0.9rem;color:#555;margin-bottom:4px}
+.err{color:red;font-weight:700;font-size:0.95rem;margin:4px 0}
+.btn{display:inline-block;padding:10px 20px;border:none;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:700;cursor:pointer;transition:.2s}
+.btn-primary{background:#2563eb;color:#fff}
+.btn-primary:hover{background:#1d4ed8}
+.btn-green{background:#16a34a;color:#fff}
+.btn-green:hover{background:#15803d}
+.btn-red{background:#dc2626;color:#fff}
+.btn-red:hover{background:#b91c1c}
+.btn-gray{background:#6b7280;color:#fff}
+.btn-orange{background:#ea580c;color:#fff}
+.btn-sm{padding:7px 14px;font-size:1rem}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+/* Eval page */
+#eval-page{padding:8px 12px}
+.eval-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px}
+.chrono-box{background:#1a1a2e;color:#fff;border-radius:8px;padding:6px 16px;font-size:1.8rem;font-weight:900;min-width:110px;text-align:center}
+.phase-box{flex:1;background:#e0e7ff;border-radius:8px;padding:6px 12px;text-align:center;font-size:1.2rem;font-weight:700}
+.course-run{background:#f0fdf4;border:2px solid #16a34a;border-radius:8px;padding:8px 12px;margin-bottom:8px}
+.course-run h3{color:#16a34a;font-size:1.1rem;font-weight:700}
+.run-chrono{font-size:2.2rem;font-weight:900;color:#16a34a;margin:4px 0}
+.repos-chrono{font-size:2.2rem;font-weight:900;color:#dc2626;margin:4px 0}
+.tours-display{font-size:1.4rem;font-weight:700;margin:4px 0}
+.btns-run{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.note-provisoire{background:#fef9c3;border:1px solid #eab308;border-radius:6px;padding:6px 10px;margin-top:6px;font-size:0.95rem}
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;justify-content:center;align-items:center}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:12px;padding:28px 32px;max-width:480px;width:92%;text-align:center}
+.modal h2{margin-bottom:14px;font-size:1.4rem}
+.modal input{font-size:1.3rem;padding:12px;margin:12px 0;text-align:center}
+.modal p{margin-bottom:10px;font-size:1rem;color:#555}
+/* Results */
+#result-page{padding:10px 16px}
+.result-section{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:10px}
+.result-section h3{font-weight:700;font-size:1.1rem;margin-bottom:8px;color:#1a1a2e}
+.score-big{font-size:2rem;font-weight:900;color:#2563eb}
+.prof-msg{background:#fef3c7;border:2px solid #f59e0b;border-radius:8px;padding:12px;text-align:center;font-size:1.3rem;font-weight:700;margin-top:10px;color:#92400e}
+table{width:100%;border-collapse:collapse;font-size:0.9rem}
+th{background:#2563eb;color:#fff;padding:5px 8px;text-align:left}
+td{padding:5px 8px;border-bottom:1px solid #e2e8f0}
+.radio-group{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+.radio-group label{display:flex;align-items:center;gap:8px;font-weight:400;cursor:pointer;padding:6px 10px;border:1px solid #ddd;border-radius:6px}
+.radio-group label:hover{background:#f0f4ff}
+.radio-group input[type=radio]{width:auto;margin:0}
+</style>
+</head>
+<body>
+<div id="portrait-msg">
+  <div style="font-size:3rem">📱</div>
+  <p>Veuillez tourner votre appareil en <strong>mode paysage</strong> pour utiliser cette application.</p>
+</div>
+<div id="app">
+
+<!-- PAGE 1 : FORMULAIRE -->
+<div class="page active" id="page-form">
+  <div class="banner">
+    <span>⏱ Durée totale : 30 min</span>
+    <span>🔥 Échauffement : 4 min</span>
+    <span>🏃 Course : 12 min</span>
+    <span>💤 Repos : 14 min</span>
+  </div>
+  <h1>Évaluation Demi-Fond — EPS 3e</h1>
+  <div class="row">
+    <div><label>Pseudo coureur</label><input type="text" id="pseudo" placeholder="Ton pseudo"></div>
+    <div><label>Classe</label>
+      <select id="classe"><option value="">-- Classe --</option><option>3A</option><option>3B</option><option>3C</option><option>3D</option><option>3E</option></select>
+    </div>
+    <div><label>Pseudo observateur</label><input type="text" id="pseudo-obs" placeholder="Pseudo de l'observateur"></div>
+    <div><label>VMA (km/h)</label><input type="number" id="vma" min="8" max="22" step="0.1" placeholder="ex: 14"></div>
+  </div>
+  <div class="row" style="align-items:center;margin-bottom:8px">
+    <div style="flex:0 0 auto"><label>Nombre de courses</label>
+      <select id="nb-courses" onchange="buildCourses()">
+        <option value="">--</option><option>2</option><option>3</option><option>4</option><option>5</option>
+      </select>
+    </div>
+    <div style="flex:1"></div>
+  </div>
+  <div id="courses-container"></div>
+  <div id="form-err" class="err"></div>
+  <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap">
+    <button class="btn btn-primary" onclick="validateForm()">Commencer l'évaluation</button>
+    <button class="btn btn-gray btn-sm" onclick="restoreData()">🔄 Restaurer</button>
+  </div>
+
+  <hr style="margin:16px 0;border-color:#ddd">
+  <h2 style="font-size:1.1rem;margin-bottom:6px">🔍 Consulter mes performances passées</h2>
+  <div class="row" style="align-items:flex-end;max-width:500px">
+    <div><label>Pseudo à rechercher</label><input type="text" id="search-pseudo" placeholder="Ex: runner1"></div>
+    <div style="flex:0 0 auto;padding-bottom:8px"><button class="btn btn-primary btn-sm" onclick="searchPerf()">Rechercher</button></div>
+  </div>
+  <div id="search-results" style="margin-top:10px"></div>
+</div>
+
+<!-- PAGE 2 : CONFIRMATION -->
+<div class="page" id="page-confirm">
+  <div style="display:flex;justify-content:center;align-items:center;min-height:100vh;flex-direction:column;gap:20px">
+    <h1 style="text-align:center">Confirmation de départ</h1>
+    <div style="background:#e0f2fe;border-radius:12px;padding:24px 32px;text-align:center;font-size:1.3rem;max-width:500px">
+      Le coureur <strong id="confirm-pseudo"></strong> a-t-il rejoint un plot et est-il prêt à courir ?
+    </div>
+    <button class="btn btn-green" style="font-size:1.3rem;padding:14px 36px" onclick="startEval()">✅ Démarrer l'évaluation</button>
+    <button class="btn btn-gray btn-sm" onclick="showPage('page-form')">← Retour</button>
+  </div>
+</div>
+
+<!-- PAGE 3 : ÉVALUATION -->
+<div class="page" id="eval-page">
+  <div class="eval-top">
+    <div>
+      <div style="font-size:0.8rem;color:#666;text-align:center">Temps total</div>
+      <div class="chrono-box" id="chrono-general">30:00</div>
+    </div>
+    <div class="phase-box" id="phase-label">Échauffement</div>
+    <div>
+      <button class="btn btn-orange btn-sm" onclick="finishEval()">J'ai fini l'évaluation</button>
+    </div>
+  </div>
+  <div id="eval-content"></div>
+</div>
+
+<!-- PAGE 4 : RÉSULTATS -->
+<div class="page" id="result-page">
+  <h1>Résultats — <span id="result-pseudo"></span></h1>
+  <div id="result-content"></div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-metres">
+  <div class="modal">
+    <h2>Mètres supplémentaires</h2>
+    <p>Combien de mètres supplémentaires après le dernier tour complet ?<br><em>(1 plot = 25 m)</em></p>
+    <input type="number" id="modal-metres-val" min="0" max="99" value="0" style="width:100%">
+    <br>
+    <button class="btn btn-primary" style="width:100%;margin-top:10px" onclick="confirmMetres()">Valider</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-note-recup">
+  <div class="modal">
+    <h2>Note de récupération</h2>
+    <p>L'observateur évalue la récupération du coureur :</p>
+    <div class="radio-group" id="recup-radio-group">
+      <label><input type="radio" name="note-recup" value="0.5"> 0,5 pt — Récupération passive, s'assoit et attend</label>
+      <label><input type="radio" name="note-recup" value="1.25"> 1,25 pts — Passive, s'assoit mais se relève avant le départ</label>
+      <label><input type="radio" name="note-recup" value="2"> 2 pts — Active : reste debout, boit un peu</label>
+      <label><input type="radio" name="note-recup" value="2.5"> 2,5 pts — Active optimisée : reste debout, boit, se remet en jambes</label>
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin-top:10px" onclick="confirmNoteRecup()">Valider</button>
+  </div>
+</div>
+
+</div><!-- #app -->
+
+<script>
+// ===================== STATE =====================
+let S = {
+  pseudo:'', classe:'', pseudoObs:'', vma:0,
+  courses:[], // [{duree, pct, recup, tours, metres, marche, noteRecupSaisie, distReelle, pctReel, noteK, noteL, noteM}]
+  startTs:0, // timestamp départ eval
+  phase:'warmup', // warmup | course-N | recup-N | done
+  currentCourse:0,
+  notesRecup:[], // notes recup saisies
+  noteEchauffement:0,
+  noteObs:0,
+  evalRunning:false,
+  evalFinished:false,
+  metresModalCourse:-1, // index course en attente
+  recupModalCourse:-1,
+  marcheFlags:[], // bool par course
+  finishPending:false,
+  metrePending:false,
+  recupNotePending:false,
+};
+
+let timerGeneral=null, timerPhase=null;
+let phaseEndTs=0; // timestamp fin de phase courante
+let generalEndTs=0;
+let audioCtx=null;
+
+function getAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+
+function beep(freq=880,dur=0.15,vol=1,delay=0){
+  try{
+    const ctx=getAudio();
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.connect(g);g.connect(ctx.destination);
+    o.frequency.value=freq;g.gain.value=vol;
+    const t=ctx.currentTime+delay;
+    o.start(t);o.stop(t+dur);
+  }catch(e){}
+}
+
+function beep3(){beep(440,0.25,1,0);beep(440,0.25,1,0.35);beep(440,0.25,1,0.7);}
+function beepAlert(){beep(1200,0.1,0.7);}
+
+// ===================== FORM =====================
+function buildCourses(){
+  const n=parseInt(document.getElementById('nb-courses').value)||0;
+  const vma=parseFloat(document.getElementById('vma').value)||0;
+  const c=document.getElementById('courses-container');
+  c.innerHTML='';
+  for(let i=0;i<n;i++){
+    const locked=i===0;
+    c.innerHTML+=`
+    <div class="course-block" id="cb-${i}">
+      <h3>Course ${i+1}${locked?' (3 min obligatoires)':''}</h3>
+      <div class="row">
+        <div><label>Durée (min)</label>
+          <input type="number" id="dur-${i}" min="${locked?3:1}" max="12" value="${locked?3:''}" ${locked?'readonly':''} oninput="updateDist(${i})">
+        </div>
+        <div><label>% VMA (80–130)</label>
+          <input type="number" id="pct-${i}" min="80" max="130" step="1" placeholder="" oninput="updateDist(${i})">
+        </div>
+        ${i<n-1?`<div><label>Récup après (min)</label><input type="number" id="rec-${i}" min="1" max="20" placeholder=""></div>`:''}
+        <div><label>Distance cible</label><div class="dist-preview" id="dist-${i}">—</div></div>
+      </div>
+    </div>`;
+  }
+  if(n) updateDist(0);
+}
+
+function updateDist(i){
+  const vma=parseFloat(document.getElementById('vma').value)||0;
+  const dur=parseFloat(document.getElementById('dur-'+i).value)||0;
+  const pct=parseFloat(document.getElementById('pct-'+i).value)||0;
+  const el=document.getElementById('dist-'+i);
+  if(vma&&dur&&pct){
+    const d=Math.round(vma*pct/100*dur/60*1000);
+    el.textContent=d+' m';
+  } else el.textContent='—';
+}
+
+function validateForm(){
+  const pseudo=document.getElementById('pseudo').value.trim();
+  const classe=document.getElementById('classe').value;
+  const pseudoObs=document.getElementById('pseudo-obs').value.trim();
+  const vma=parseFloat(document.getElementById('vma').value);
+  const nb=parseInt(document.getElementById('nb-courses').value)||0;
+  const err=document.getElementById('form-err');
+  if(!pseudo||!classe||!pseudoObs||!vma||!nb){err.textContent='Remplis tous les champs.';return;}
+  let courses=[];
+  let totalCourse=0,totalRecup=0;
+  for(let i=0;i<nb;i++){
+    const dur=parseFloat(document.getElementById('dur-'+i).value);
+    const pct=parseFloat(document.getElementById('pct-'+i).value);
+    if(!dur||!pct){err.textContent=`Course ${i+1} : durée ou % VMA manquant.`;return;}
+    if(pct<80||pct>130){err.textContent=`Course ${i+1} : % VMA doit être entre 80 et 130.`;return;}
+    if(i===0&&dur!==3){err.textContent='La course 1 doit être de 3 minutes.';return;}
+    if(i>0&&dur<1){err.textContent=`Course ${i+1} : durée minimum 1 minute.`;return;}
+    let recup=0;
+    if(i<nb-1){
+      recup=parseFloat(document.getElementById('rec-'+i).value)||0;
+      if(recup<1){err.textContent=`Récupération après course ${i+1} : minimum 1 minute.`;return;}
+    }
+    totalCourse+=dur; totalRecup+=recup;
+    const dist=Math.round(vma*pct/100*dur/60*1000);
+    courses.push({duree:dur,pct,recup,dist,tours:0,metres:0,marche:false,noteRecupSaisie:null,distReelle:0,pctReel:0,noteK:0,noteL:0,noteM:0});
+  }
+  if(totalCourse!==12){err.textContent=`Total des courses = ${totalCourse} min. Il faut exactement 12 min.`;return;}
+  if(totalCourse+totalRecup!==26){err.textContent=`Total courses + récupérations = ${totalCourse+totalRecup} min. Il faut exactement 26 min.`;return;}
+  err.textContent='';
+  S.pseudo=pseudo;S.classe=classe;S.pseudoObs=pseudoObs;S.vma=vma;S.courses=courses;
+  S.marcheFlags=courses.map(()=>false);
+  S.notesRecup=[];
+  saveLocal();
+  document.getElementById('confirm-pseudo').textContent=pseudo;
+  showPage('page-confirm');
+}
+
+// ===================== EVAL START =====================
+function startEval(){
+  S.startTs=Date.now();
+  generalEndTs=S.startTs+30*60*1000;
+  S.evalRunning=true;
+  S.phase='warmup';
+  saveLocal();
+  showPage('eval-page');
+  renderEvalContent();
+  startGeneralTimer();
+  startWarmup();
+}
+
+function startGeneralTimer(){
+  if(timerGeneral)clearInterval(timerGeneral);
+  timerGeneral=setInterval(()=>{
+    const rem=Math.max(0,generalEndTs-Date.now());
+    document.getElementById('chrono-general').textContent=fmt(rem);
+    if(rem<=0&&!S.evalFinished){
+      // Non bloquant : attendre fin de phase et modals
+      if(!S.metrePending&&!S.recupNotePending&&S.phase==='done'){
+        triggerEnd();
+      } else {
+        S.finishPending=true;
+      }
+    }
+  },250);
+}
+
+function fmt(ms){
+  const s=Math.max(0,Math.floor(ms/1000));
+  return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+}
+
+function renderEvalContent(){
+  document.getElementById('eval-content').innerHTML='<div id="phase-content"></div>';
+}
+
+// ===================== WARMUP =====================
+function startWarmup(){
+  S.phase='warmup';
+  if(!S.warmupEndTs) S.warmupEndTs=S.startTs+4*60*1000;
+  phaseEndTs=S.warmupEndTs;
+  saveLocal();
+  document.getElementById('phase-label').textContent='🔥 Échauffement';
+  document.getElementById('phase-content').innerHTML=`
+    <div style="text-align:center;padding:20px">
+      <div style="font-size:1rem;color:#666;margin-bottom:4px">Échauffement</div>
+      <div id="warmup-chrono" style="font-size:4rem;font-weight:900;color:#ea580c">04:00</div>
+      <div id="warmup-msg" style="font-size:1.1rem;margin-top:10px;color:#555"></div>
+    </div>`;
+  let warned=false;
+  if(timerPhase)clearInterval(timerPhase);
+  timerPhase=setInterval(()=>{
+    const rem=Math.max(0,phaseEndTs-Date.now());
+    document.getElementById('warmup-chrono').textContent=fmt(rem);
+    const elapsed=4*60*1000-rem;
+    if(elapsed>=3.5*60*1000&&!warned){
+      warned=true;
+      beepAlert();
+      document.getElementById('warmup-msg').innerHTML='<strong>⚠️ Dis au coureur de rejoindre un plot pour le début de la course 1 !</strong>';
+    }
+    if(rem<=0){clearInterval(timerPhase);startCourse(0);}
+  },250);
+}
+
+// ===================== COURSE =====================
+function startCourse(idx){
+  S.phase='course-'+idx;
+  S.currentCourse=idx;
+  const c=S.courses[idx];
+  const dur=c.duree*60*1000;
+  if(!c.courseEndTs) c.courseEndTs=Date.now()+dur;
+  phaseEndTs=c.courseEndTs;
+  saveLocal();
+  document.getElementById('phase-label').textContent=`🏃 Course ${idx+1}`;
+  document.getElementById('phase-content').innerHTML=`
+    <div class="course-run">
+      <div class="row" style="align-items:center">
+        <div>
+          <h3>Course ${idx+1} / ${S.courses.length}</h3>
+          <div class="run-chrono" id="run-chrono">${fmt(dur)}</div>
+        </div>
+        <div style="text-align:center">
+          <div class="tours-display">Tours : <span id="tours-count">${c.tours}</span></div>
+          <div style="font-size:0.9rem;color:#555">≈ <span id="dist-run">0</span> m</div>
+        </div>
+        <div>
+          <div style="font-size:0.85rem;color:#555">Cible : ${c.dist} m @ ${c.pct}% VMA</div>
+          <div style="font-size:0.85rem;color:#555">VMA : ${S.vma} km/h</div>
+        </div>
+      </div>
+      <div class="btns-run">
+        <button class="btn btn-green" id="btn-tour" onclick="addTour(${idx})">+ 1 Tour</button>
+        <button class="btn btn-gray btn-sm" id="btn-oups" onclick="oups(${idx})">Oups</button>
+        <button class="btn btn-red btn-sm" id="btn-marche" onclick="toggleMarche(${idx})">${c.marche?'✓ Marche (annuler)':'🚶 Marche'}</button>
+      </div>
+      ${c.marche?'<div style="color:red;font-weight:700;margin-top:4px">⚠️ Marche signalée — notes divisées par 2</div>':''}
+    </div>`;
+  if(timerPhase)clearInterval(timerPhase);
+  timerPhase=setInterval(()=>{
+    const rem=Math.max(0,phaseEndTs-Date.now());
+    const el=document.getElementById('run-chrono');
+    if(el)el.textContent=fmt(rem);
+    if(rem<=0){clearInterval(timerPhase);endCourse(idx);}
+  },250);
+}
+
+function addTour(idx){
+  if(S.phase!=='course-'+idx)return;
+  S.courses[idx].tours++;
+  updateRunDisplay(idx);
+  saveLocal();
+}
+
+function oups(idx){
+  if(S.phase!=='course-'+idx)return;
+  if(S.courses[idx].tours>0){S.courses[idx].tours--;updateRunDisplay(idx);saveLocal();}
+}
+
+function toggleMarche(idx){
+  S.courses[idx].marche=!S.courses[idx].marche;
+  S.marcheFlags[idx]=S.courses[idx].marche;
+  // Re-render bouton
+  const btn=document.getElementById('btn-marche');
+  if(btn)btn.textContent=S.courses[idx].marche?'✓ Marche (annuler)':'🚶 Marche';
+  const pc=document.getElementById('phase-content');
+  const warn=pc.querySelector('.marche-warn');
+  if(S.courses[idx].marche){
+    if(!warn){const d=document.createElement('div');d.className='marche-warn';d.style='color:red;font-weight:700;margin-top:4px';d.textContent='⚠️ Marche signalée — notes divisées par 2';pc.querySelector('.course-run').appendChild(d);}
+  } else {if(warn)warn.remove();}
+  saveLocal();
+}
+
+function updateRunDisplay(idx){
+  const t=document.getElementById('tours-count');
+  const d=document.getElementById('dist-run');
+  if(t)t.textContent=S.courses[idx].tours;
+  if(d)d.textContent=S.courses[idx].tours*100;
+}
+
+function endCourse(idx){
+  beep3();
+  document.getElementById('btn-tour')&&(document.getElementById('btn-tour').disabled=true);
+  // Lancer recup en arrière plan si pas dernière course
+  const isLast=idx===S.courses.length-1;
+  if(!isLast){
+    startRecup(idx);
+  } else {
+    S.phase='done';
+    document.getElementById('phase-label').textContent='✅ Évaluation terminée';
+  }
+  // Demander mètres supplémentaires seulement si pas déjà fait
+  if(!S.courses[idx].metresDone){
+    S.metrePending=true;
+    S.metresModalCourse=idx;
+    document.getElementById('modal-metres-val').value=0;
+    document.getElementById('modal-metres').classList.add('open');
+  } else {
+    calcCourse(idx);
+    showNoteProvisoire(idx);
+    checkFinishPending();
+  }
+}
+
+function confirmMetres(){
+  const idx=S.metresModalCourse;
+  const m=parseInt(document.getElementById('modal-metres-val').value)||0;
+  S.courses[idx].metres=m;
+  S.courses[idx].metresDone=true; // marqueur persistant
+  S.metrePending=false;
+  S.metresModalCourse=-1;
+  document.getElementById('modal-metres').classList.remove('open');
+  // Calculs
+  calcCourse(idx);
+  saveLocal();
+  // Afficher note provisoire dans le contenu si en recup
+  showNoteProvisoire(idx);
+  // Si finishPending et plus rien en attente
+  checkFinishPending();
+}
+
+function calcCourse(idx){
+  const c=S.courses[idx];
+  c.distReelle=c.tours*100+c.metres;
+  const dureeH=c.duree/60;
+  c.pctReel=Math.round(c.distReelle/(S.vma*dureeH*1000)*1000)/10;
+  // Note K
+  let k;
+  if(c.pctReel<80)k=1;
+  else if(c.pctReel<=85)k=2.5;
+  else if(c.pctReel<=89)k=4;
+  else k=5;
+  // Note L
+  const ecart=Math.abs(c.pct-c.pctReel);
+  let l;
+  if(ecart>=10)l=1;
+  else if(ecart>=8)l=2.5;
+  else if(ecart>=6)l=4;
+  else l=5;
+  if(c.marche){k/=2;l/=2;}
+  c.noteK=Math.round(k*10)/10;
+  c.noteL=Math.round(l*10)/10;
+  c.noteM=Math.round((k+l)/2*10)/10;
+}
+
+function showNoteProvisoire(idx){
+  const c=S.courses[idx];
+  const pc=document.getElementById('phase-content');
+  if(!pc)return;
+  const existing=pc.querySelector('.note-provisoire');
+  const html=`<div class="note-provisoire">
+    <strong>Course ${idx+1} — Résultat :</strong> ${c.distReelle} m | % VMA réel : ${c.pctReel}%
+    | Note VMA : ${c.noteK}/5 | Note écart : ${c.noteL}/5 | Note course : <strong>${c.noteM}/5</strong>
+    ${c.marche?'<span style="color:red"> (marche)</span>':''}
+  </div>`;
+  if(existing)existing.outerHTML=html;
+  else pc.insertAdjacentHTML('beforeend',html);
+}
+
+// ===================== RECUP =====================
+function startRecup(idx){
+  const c=S.courses[idx];
+  const dur=c.recup*60*1000;
+  // Stocker le timestamp de fin dans l'objet course pour restauration
+  if(!c.recupEndTs) c.recupEndTs=Date.now()+dur;
+  const recupEndTs=c.recupEndTs;
+  S.phase='recup-'+idx;
+  saveLocal();
+  let noteAsked=false;
+  document.getElementById('phase-label').textContent=`💤 Récupération ${idx+1}`;
+  // Afficher chrono repos dans phase-content
+  const recupDiv=document.createElement('div');
+  recupDiv.id='recup-block';
+  recupDiv.style='text-align:center;padding:16px';
+  recupDiv.innerHTML=`<div style="font-size:1rem;color:#dc2626;font-weight:700">REPOS ${idx+1}</div>
+    <div id="recup-chrono" style="font-size:4rem;font-weight:900;color:#dc2626">${fmt(dur)}</div>
+    <div id="recup-msg" style="font-size:1rem;margin-top:8px"></div>`;
+  const pc=document.getElementById('phase-content');
+  if(pc){pc.appendChild(recupDiv);}
+  if(timerPhase)clearInterval(timerPhase);
+  timerPhase=setInterval(()=>{
+    const rem=Math.max(0,recupEndTs-Date.now());
+    const el=document.getElementById('recup-chrono');
+    if(el)el.textContent=fmt(rem);
+    if(rem<=10000&&rem>0&&!noteAsked){
+      noteAsked=true;
+      beepAlert();
+      S.recupNotePending=true;
+      S.recupModalCourse=idx;
+      document.querySelectorAll('input[name="note-recup"]').forEach(r=>r.checked=false);
+      document.getElementById('modal-note-recup').classList.add('open');
+    }
+    if(rem<=0){
+      clearInterval(timerPhase);
+      // Lancer prochaine course
+      startCourse(idx+1);
+    }
+  },250);
+}
+
+function confirmNoteRecup(){
+  const val=document.querySelector('input[name="note-recup"]:checked');
+  if(!val){alert('Sélectionne une note.');return;}
+  S.notesRecup.push(parseFloat(val.value));
+  S.recupNotePending=false;
+  document.getElementById('modal-note-recup').classList.remove('open');
+  saveLocal();
+  checkFinishPending();
+}
+
+function checkFinishPending(){
+  if(S.finishPending&&!S.metrePending&&!S.recupNotePending){
+    S.finishPending=false;
+    triggerEnd();
+  }
+}
+
+// ===================== FIN =====================
+function finishEval(){
+  if(S.evalFinished)return;
+  // Si modal metres ouverte, laisser finir
+  if(S.metrePending){S.finishPending=true;return;}
+  S.finishPending=true;
+  // Terminer phase courante
+  if(timerPhase)clearInterval(timerPhase);
+  // Si en cours de course, déclencher endCourse
+  const m=S.phase.match(/^course-(\d+)$/);
+  if(m){
+    const idx=parseInt(m[1]);
+    endCourse(idx);
+    return;
+  }
+  if(!S.metrePending&&!S.recupNotePending)triggerEnd();
+}
+
+function triggerEnd(){
+  if(S.evalFinished)return;
+  S.evalFinished=true;
+  S.evalRunning=false;
+  if(timerGeneral)clearInterval(timerGeneral);
+  if(timerPhase)clearInterval(timerPhase);
+  // Calculer courses non encore calculées
+  S.courses.forEach((c,i)=>{if(!c.distReelle&&c.tours>0)calcCourse(i);});
+  saveLocal();
+  showResultPage();
+}
+
+// ===================== RESULT PAGE =====================
+function showResultPage(){
+  showPage('result-page');
+  document.getElementById('result-pseudo').textContent=S.pseudo;
+  renderResultContent();
+}
+
+function renderResultContent(){
+  const div=document.getElementById('result-content');
+  let html='';
+  // Tableau des courses
+  html+=`<div class="result-section"><h3>Détail des courses</h3>
+  <table><tr><th>#</th><th>Durée</th><th>% prévu</th><th>Dist. prévue</th><th>Tours</th><th>Mètres+</th><th>Dist. réelle</th><th>% réel</th><th>NoteK</th><th>NoteL</th><th>Note course</th><th>Marche</th></tr>`;
+  S.courses.forEach((c,i)=>{
+    html+=`<tr>
+      <td>${i+1}</td><td>${c.duree} min</td><td>${c.pct}%</td><td>${c.dist} m</td>
+      <td>${c.tours}</td><td>${c.metres}</td><td>${c.distReelle} m</td><td>${c.pctReel}%</td>
+      <td>${c.noteK}</td><td>${c.noteL}</td><td><strong>${c.noteM}</strong></td>
+      <td>${c.marche?'<span style="color:red">Oui</span>':'Non'}</td>
+    </tr>`;
+  });
+  html+=`</table></div>`;
+  // Saisie note échauffement
+  html+=`<div class="result-section"><h3>Note d'échauffement (observateur)</h3>
+  <div class="radio-group">
+    <label><input type="radio" name="note-echa" value="0.5"> 0,5 pt — Ne s'échauffe pas, commence directement</label>
+    <label><input type="radio" name="note-echa" value="1.25"> 1,25 pts — Bouge un peu, sans vraie intention</label>
+    <label><input type="radio" name="note-echa" value="2"> 2 pts — Échauffement progressif (MG, TB, courses…)</label>
+    <label><input type="radio" name="note-echa" value="2.5"> 2,5 pts — Échauffement progressif + course à la vitesse cible</label>
+  </div></div>`;
+  // Saisie note d'observation de l'observateur (par le coureur)
+  html+=`<div class="result-section"><h3>Note d'observation de <strong>${S.pseudoObs}</strong> (saisie par ${S.pseudo})</h3>
+  <p style="font-size:0.9rem;color:#555;margin-bottom:8px">Cette note sera enregistrée dans la ligne de ${S.pseudoObs} dans le tableau de bord.</p>
+  <div class="radio-group">
+    <label><input type="radio" name="note-obs-coureur" value="1"> 1 pt — N'a pas rempli correctement, erreurs constatées</label>
+    <label><input type="radio" name="note-obs-coureur" value="2.5"> 2,5 pts — A tenu la tablette correctement</label>
+    <label><input type="radio" name="note-obs-coureur" value="4"> 4 pts — A bien tenu la tablette et donné des infos régulières sur le temps restant</label>
+    <label><input type="radio" name="note-obs-coureur" value="5"> 5 pts — A bien tenu la tablette, infos sur temps et distance, rappel consignes en récup</label>
+  </div></div>`;
+  html+=`<div id="final-notes-display"></div>`;
+  html+=`<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+    <button class="btn btn-primary" onclick="calcFinalNotes()">Calculer les notes finales</button>
+    <button class="btn btn-green" onclick="saveData()">💾 Enregistrer les données</button>
+    <button class="btn btn-gray btn-sm" onclick="downloadCSV()">📥 Exporter CSV</button>
+  </div>`;
+  html+=`<div id="prof-msg" class="prof-msg" style="display:none">📋 Montre les notes à ton prof !</div>`;
+  div.innerHTML=html;
+}
+
+function calcFinalNotes(){
+  const echa=document.querySelector('input[name="note-echa"]:checked');
+  const obs=document.querySelector('input[name="note-obs-coureur"]:checked');
+  if(!echa||!obs){alert('Saisir toutes les notes avant de calculer.');return;}
+  S.noteEchauffement=parseFloat(echa.value);
+  S.noteObs=parseFloat(obs.value);
+  // Moyenne notes recup
+  const noteRecupMoy=S.notesRecup.length?Math.round(S.notesRecup.reduce((a,b)=>a+b,0)/S.notesRecup.length*10)/10:0;
+  // Moyenne note course
+  const noteCourse=Math.round(S.courses.reduce((a,c)=>a+c.noteM,0)/S.courses.length*10)/10;
+  const noteTotal=Math.round((noteCourse+S.noteEchauffement+noteRecupMoy)*10)/10;
+  const noteFinale=Math.round((noteTotal+S.noteObs)*10)/10;
+  const html=`<div class="result-section" style="border-color:#2563eb">
+    <h3>📊 Notes finales — ${S.pseudo}</h3>
+    <table>
+      <tr><th>Catégorie</th><th>Note</th><th>Sur</th></tr>
+      <tr><td>Note de course (moy. courses)</td><td><strong>${noteCourse}</strong></td><td>5</td></tr>
+      <tr><td>Note échauffement</td><td><strong>${S.noteEchauffement}</strong></td><td>2,5</td></tr>
+      <tr><td>Note récupération (moy.)</td><td><strong>${noteRecupMoy}</strong></td><td>2,5</td></tr>
+      <tr style="background:#e0e7ff"><td><strong>Note totale</strong></td><td><strong>${noteTotal}</strong></td><td>10</td></tr>
+      <tr><td>Note observateur</td><td><strong>${S.noteObs}</strong></td><td>5</td></tr>
+      <tr style="background:#fef9c3"><td><strong>NOTE FINALE</strong></td><td><strong style="font-size:1.4rem;color:#2563eb">${noteFinale}</strong></td><td>15</td></tr>
+    </table>
+    <div style="margin-top:8px;font-size:0.85rem;color:#666">Récupérations saisies : ${S.notesRecup.join(', ')||'—'}</div>
+  </div>`;
+  document.getElementById('final-notes-display').innerHTML=html;
+  document.getElementById('prof-msg').style.display='block';
+  // Stocker pour export
+  S._noteRecupMoy=noteRecupMoy;S._noteCourse=noteCourse;S._noteTotal=noteTotal;S._noteFinale=noteFinale;
+  saveLocal();
+}
+
+// ===================== EXPORT =====================
+function buildRow(){
+  const c=S.courses;
+  const durees=c.map(x=>x.duree+'min').join('|');
+  const distPrev=c.map(x=>x.dist+'m').join('|');
+  const pctPrev=c.map(x=>x.pct+'%').join('|');
+  const distReel=c.map(x=>x.distReelle+'m').join('|');
+  const pctReel=c.map(x=>x.pctReel+'%').join('|');
+  const marche=c.map(x=>x.marche?'oui':'non').join('|');
+  const moyK=Math.round(c.reduce((a,x)=>a+x.noteK,0)/c.length*10)/10;
+  const moyL=Math.round(c.reduce((a,x)=>a+x.noteL,0)/c.length*10)/10;
+  return [
+    S.classe,S.pseudo,S.vma,c.length,
+    durees,distPrev,pctPrev,distReel,pctReel,marche,
+    moyK,moyL,S._noteCourse||'',S.noteEchauffement||'',S._noteRecupMoy||'',S._noteTotal||'',
+    S.pseudoObs,S.noteObs||'',S._noteFinale||''
+  ];
+}
+
+function downloadCSV(){
+  const row=buildRow();
+  const headers='classe,pseudo,VMA,nb_courses,durees,dist_prevues,pct_prevus,dist_reelles,pct_reels,marche,noteK,noteL,note_course,note_echa,note_recup,note_totale,pseudo_obs,note_obs,note_finale';
+  const csv=headers+'\n'+row.join(',');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='demifond_'+S.pseudo+'_'+S.classe+'.csv';
+  a.click();
+}
+
+function saveData(){
+  const row=buildRow();
+  const APPS_URL='URL_APPS_SCRIPT_ICI';
+  if(APPS_URL==='URL_APPS_SCRIPT_ICI'){alert('URL Apps Script non configurée. Export CSV disponible.');downloadCSV();return;}
+  // Envoi ligne coureur
+  const params=new URLSearchParams();
+  ['classe','pseudo','vma','nb','durees','distPrev','pctPrev','distReel','pctReel','marche','noteK','noteL','noteCourse','noteEcha','noteRecup','noteTotal','pseudoObs','noteFinale']
+    .forEach((k,i)=>params.append(k,row[i]));
+  params.append('action','coureur');
+  // Envoi note d'observation dans la ligne de l'observateur
+  params.append('pseudoObsNote', S.pseudoObs);
+  params.append('noteObs', S.noteObs||'');
+  fetch(APPS_URL+'?'+params.toString())
+    .then(r=>r.text()).then(()=>alert('Données enregistrées dans Google Sheets ✅'))
+    .catch(()=>alert('Erreur lors de l\'envoi. Données exportées en CSV.'));
+  downloadCSV();
+}
+
+function searchPerf(){
+  const pseudo=document.getElementById('search-pseudo').value.trim();
+  const out=document.getElementById('search-results');
+  if(!pseudo){out.innerHTML='<span class="err">Saisis un pseudo.</span>';return;}
+  const APPS_URL='https://script.google.com/macros/s/AKfycbyMcL_pveZen2bmLTKLdi-wS9ZFuyaE9yeNGEso_hCtQ8EjL-sxevD1JdQqZcOuarO26g/exec';
+  if(APPS_URL==='URL_APPS_SCRIPT_ICI'){out.innerHTML='<span class="err">URL Apps Script non configurée.</span>';return;}
+  out.innerHTML='<em>Recherche en cours…</em>';
+  fetch(APPS_URL+'?action=search&pseudo='+encodeURIComponent(pseudo))
+    .then(r=>r.text())
+    .then(txt=>{
+      let rows;
+      try{rows=JSON.parse(txt);}catch(e){out.innerHTML='<span class="err">Réponse invalide du serveur.</span>';return;}
+      if(!rows||rows.length===0){out.innerHTML='<span class="err">Aucune donnée trouvée pour ce pseudo.</span>';return;}
+      let html=`<div style="overflow-x:auto"><table>
+        <tr><th>Classe</th><th>Pseudo</th><th>VMA</th><th>Nb courses</th><th>Dist. réelle</th><th>% réel VMA</th><th>Note course</th><th>Note écha</th><th>Note récup</th><th>Note totale</th><th>Note obs</th><th>Note finale</th></tr>`;
+      rows.forEach(r=>{
+        html+=`<tr>
+          <td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td>
+          <td>${r[7]}</td><td>${r[8]}</td><td>${r[12]}</td><td>${r[13]}</td>
+          <td>${r[14]}</td><td>${r[15]}</td><td>${r[17]}</td>
+          <td><strong style="color:#2563eb">${r[18]||'—'}</strong></td>
+        </tr>`;
+      });
+      html+=`</table></div>`;
+      out.innerHTML=html;
+    })
+    .catch(()=>out.innerHTML='<span class="err">Erreur de connexion au Sheets.</span>');
+}
+
+// ===================== LOCAL STORAGE =====================
+function saveLocal(){
+  try{localStorage.setItem('df_state',JSON.stringify({S,generalEndTs,phaseEndTs}));}catch(e){}
+}
+
+function restoreData(){
+  try{
+    const raw=localStorage.getItem('df_state');
+    if(!raw){alert('Aucune donnée sauvegardée.');return;}
+    const saved=JSON.parse(raw);
+    S=saved.S;
+    generalEndTs=saved.generalEndTs;
+    phaseEndTs=saved.phaseEndTs;
+    if(S.evalFinished){showResultPage();return;}
+    if(S.evalRunning){
+      showPage('eval-page');
+      renderEvalContent();
+      startGeneralTimer();
+      // Rouvrir modale mètres si en attente (et pas déjà validée)
+      if(S.metrePending && S.metresModalCourse>=0 && !S.courses[S.metresModalCourse]?.metresDone){
+        document.getElementById('modal-metres-val').value=0;
+        document.getElementById('modal-metres').classList.add('open');
+      }
+      // Reprendre la bonne phase
+      const ph=S.phase;
+      if(ph==='warmup'){
+        // Reprendre warmup
+        const rem=phaseEndTs-Date.now();
+        if(rem>0){restoreWarmup();}else{startCourse(0);}
+      } else {
+        const m=ph.match(/^course-(\d+)$/);
+        const r=ph.match(/^recup-(\d+)$/);
+        if(m){const idx=parseInt(m[1]);const rem=phaseEndTs-Date.now();if(rem>0)startCourse(idx);else endCourse(idx);}
+        else if(r){const idx=parseInt(r[1]);startRecup(idx);}
+        else if(ph==='done'){triggerEnd();}
+      }
+    } else {
+      // Repopuler le formulaire
+      document.getElementById('pseudo').value=S.pseudo||'';
+      document.getElementById('classe').value=S.classe||'';
+      document.getElementById('pseudo-obs').value=S.pseudoObs||'';
+      document.getElementById('vma').value=S.vma||'';
+      if(S.courses.length){
+        document.getElementById('nb-courses').value=S.courses.length;
+        buildCourses();
+        S.courses.forEach((c,i)=>{
+          const d=document.getElementById('dur-'+i);
+          const p=document.getElementById('pct-'+i);
+          const rec=document.getElementById('rec-'+i);
+          if(d)d.value=c.duree;
+          if(p)p.value=c.pct;
+          if(rec)rec.value=c.recup||'';
+          updateDist(i);
+        });
+      }
+      alert('Données restaurées ✅');
+    }
+  }catch(e){alert('Erreur lors de la restauration.');}
+}
+
+function restoreWarmup(){
+  phaseEndTs=S.warmupEndTs||phaseEndTs;
+  document.getElementById('phase-label').textContent='🔥 Échauffement';
+  document.getElementById('phase-content').innerHTML=`
+    <div style="text-align:center;padding:20px">
+      <div style="font-size:1rem;color:#666;margin-bottom:4px">Échauffement</div>
+      <div id="warmup-chrono" style="font-size:4rem;font-weight:900;color:#ea580c">--:--</div>
+      <div id="warmup-msg" style="font-size:1.1rem;margin-top:10px;color:#555"></div>
+    </div>`;
+  let warned=false;
+  if(timerPhase)clearInterval(timerPhase);
+  timerPhase=setInterval(()=>{
+    const rem=Math.max(0,phaseEndTs-Date.now());
+    document.getElementById('warmup-chrono').textContent=fmt(rem);
+    const elapsed=4*60*1000-rem;
+    if(elapsed>=3.5*60*1000&&!warned){warned=true;beepAlert();document.getElementById('warmup-msg').innerHTML='<strong>⚠️ Dis au coureur de rejoindre un plot !</strong>';}
+    if(rem<=0){clearInterval(timerPhase);startCourse(0);}
+  },250);
+}
+
+// ===================== NAV =====================
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+</script>
+</body>
+</html>
